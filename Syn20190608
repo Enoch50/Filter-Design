@@ -95,7 +95,7 @@ E1=E.*1i.^[0:1:n];
 
 for k=1:1000
     d(k)=-8+16/1000*k;
-    r(k)=polyval(F,d(k))/polyval(E,d(k))/epr;
+    r(k)=polyval(F,d(k))/polyval(E,d(k))/epr;%实频函数的结果
     t(k)=polyval(P,d(k))/polyval(E,d(k))/ep;
 end
 
