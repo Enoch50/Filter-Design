@@ -245,7 +245,7 @@ ylabel('相位(°)');
 title('带通相位响应','fontsize',14);
 
 %滤波器群时延
-tao21=-1*diff(PS21)/(1000/2000);%%%%%%
+tao21=-1*diff(PS21)/(1000/2000);%%%%%%群时延计算有误！！！
 tao21=[tao21,0];
 subplot(2,3,6);
 plot(Bd,tao21,'.b','LineWidth',1.5);
