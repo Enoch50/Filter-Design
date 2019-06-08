@@ -1,0 +1,163 @@
+% WARNING:THIS CODES ARE WRONG!!
+% n=4;
+% RL=20;
+% Start=3400;
+% Stop=3600;
+% Q=800;
+
+BW=Stop-Start;
+CF=sqrt(Start*Stop);
+FBW=BW/CF;
+
+%将带通数据投影至低通原型频率处
+% s1=importdata('data.xlsx');
+% Fb=s1(1,:);%MHz
+% s22(1,:)=s1(2,:);%S11
+% s22(2,:)=s1(3,:);%S21
+% dBs22(1,:)=20*log10(s22(1,:));
+% % dBs22(2,:)=20*log10(s22(2,:));
+Ns=length(Bd);
+nfz=1;
+w=(Bd./CF-CF./Bd)/FBW;
+plot(w,dBS11,'b',w,dBS21,'r','Linewidth',1.5);
+set(gca,'YDir','reverse');
+hold on;
+%S11，S21储存数据，若以w为自变量则为低通原型响应
+
+MS21=zeros(Ns);
+MS11=zeros(Ns);
+for k=1:Ns
+    for K=1:n+1
+        Vn(k,K)=(w(k))^(K-1);%范特蒙德矩阵（Ns*n+1阶）
+    end
+    MS21(k,k)=(S21(k));
+    MS11(k,k)=(S11(k));
+end
+for k=1:Ns
+    for K=1:nfz+1
+        Vnfz(k,K)=(w(k))^(K-1);%范特蒙德矩阵（Ns*nfz+1阶）
+    end
+end
+MatrixM=[MS21*Vn,-MS11*Vnfz];
+[U,S,V]=svd(MatrixM);% 对矩阵M进行奇异值分解，U的维度Ns*Ns，V的维度为nfz+n+2*nfz+n+2
+ExtrF=V(n+1:-1:1,n+nfz+2);
+ExtrP=V(n+nfz+2:-1:n+2,n+nfz+2);
+ExtrF=ExtrF./(ExtrF(1));
+ExtrP=ExtrP./(ExtrP(1));
+TF=ExtrF';
+TP=ExtrP';
+ExtrF=TF;
+ExtrP=TP;
+ExtrF1=ExtrF.*1i.^[0:1:n];
+ExtrP1=ExtrP.*1i.^[0:1:nfz];
+
+%根据能量守恒公式以及P、F确定特征多项式E(s)/E(w)
+ExtrP2=conv(ExtrP,ExtrP);
+ExtrF2=conv(ExtrF,ExtrF);
+ExtrP2=[zeros(1,(length(ExtrF2)-length(ExtrP2))),ExtrP2];
+ep=1/sqrt(10^(RL/10)-1)*abs(polyval(ExtrP,1)/polyval(ExtrF,1));
+if nfz==n
+    epr=ep/sqrt(ep*ep-1);
+else
+    epr=1;
+end
+ExtrE2=ExtrP2./(ep*ep)+ExtrF2./(epr*epr);
+ExtrRootE=roots(ExtrE2);
+ExtrleftRootE=find(imag(ExtrRootE)>0);
+ExtrRootE=ExtrRootE(ExtrleftRootE);
+ExtrE=poly(ExtrRootE);
+ExtrE1=ExtrE.*1i.^[0:1:n];
+%E(s)/E(w)综合结束
+
+for k=1:1000
+    d(k)=-8+16/1000*k;
+    r(k)=polyval(ExtrF,d(k))/polyval(ExtrE,d(k))/epr;
+    t(k)=polyval(ExtrP,d(k))/polyval(ExtrE,d(k))/ep;
+end
+
+I=-20*log10(abs(t));
+R=-20*log10(abs(r));
+plot(d,I,'g*',d,R,'y*');
+set(gca,'YDir','reverse');
+xlabel('归一化频率(rad/s)');
+ylabel('抑制/回波损耗(dB)');
+ylim([-2, 50]);
+xlim([-8, 8]);
+grid on;
+title('低通原型幅度响应','fontsize',14);
+
+% M1=zeros(1,n);
+% N1=zeros(1,n);
+% if mod(n,2)==0
+%     for k=n+1:-2:1
+%         M1(1,k)=real(ExtrE1(1,k)+ExtrF1(1,k));
+%         N1(1,k)=1i*imag(ExtrE1(1,k)+ExtrF1(1,k));
+%     end
+%     for k=n:-2:2
+%         M1(1,k)=1i*imag(ExtrE1(1,k)+ExtrF1(1,k));
+%         N1(1,k)=real(ExtrE1(1,k)+ExtrF1(1,k));
+%     end
+%     lambdaK=roots(M1);
+% else
+%     for k=n+1:-2:2
+%         M1(1,k)=real(ExtrE1(1,k)+ExtrF1(1,k));
+%         N1(1,k)=1i*imag(ExtrE1(1,k)+ExtrF1(1,k));
+%     end
+%     for k=n:-2:1
+%         M1(1,k)=1i*imag(ExtrE1(1,k)+ExtrF1(1,k));
+%         N1(1,k)=real(ExtrE1(1,k)+ExtrF1(1,k));
+%     end
+%     lambdaK=roots(N1);
+%     T1=N1;
+%     N1=M1;
+%     M1=T1;
+% end
+% 
+% %计算MSL
+% Msl=sqrt((epr-1)/(epr+1));
+% if Msl==0
+%     MP=P1/ep;
+% else
+%     MP=P1/ep-1i*Msl*M1;
+% end
+% 
+% %根据特征值计算留数
+% for k=1:length(lambdaK)
+%     r22(k)=polyval(N1,lambdaK(k))/polyval(polyder(M1),lambdaK(k));
+%     r21(k)=polyval(MP,lambdaK(k))/polyval(polyder(M1),lambdaK(k));
+% end
+% 
+% %根据特征值与留数计算N+2阶耦合矩阵
+% M=zeros(n+2,n+2);
+% for k=1:n
+%     M(k+1,1)=sqrt(r22(k));
+%     M(1,k+1)=M(k+1,1);
+%     M(k+1,n+2)=r21(k)/M(k+1,1);
+%     M(n+2,k+1)=M(k+1,n+2);
+%     M(k+1,k+1)=lambdaK(k)*1i;
+% end
+% M(1,n+2)=Msl;
+% M(n+2,1)=Msl;
+% display(real(M));
+% %N+2阶未化简耦合矩阵计算结束
+% 
+% %第三步：由耦合矩阵计算带通滤波器S参数(N+2阶耦合矩阵的直接分析)
+% R=zeros(n+2,n+2);
+% R(1,1)=1;
+% R(n+2,n+2)=1;
+% W=eye(n+2,n+2);
+% W(1,1)=0;
+% W(n+2,n+2)=0;
+% for k=1:1000
+%     wp(k)=((3000+1000*k/1000)/CF-CF/(3000+1000*k/1000))/FBW;
+%     Bd(k)=3000+1000*k/1000;
+%     A=R.*(-1i)+W.*wp(k)+real(M);
+%     AP=inv(A);
+%     S21(k)=-2*1i*AP(n+2,1);
+%     S11(k)=1+2*1i*AP(1,1);
+% end
+% 
+% %画出带通滤波器的图
+% dBS21=20*log10(abs(S21));
+% dBS11=20*log10(abs(S11));
+% plot(Bd,dBS21,'b*',Bd,dBS11,'g+','LineWidth',1);
