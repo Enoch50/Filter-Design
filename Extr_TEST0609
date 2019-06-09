@@ -1,4 +1,6 @@
-!!!WRONG
+%柯西法参数提取需要假定计算得出的多项式可以运用低通原型电路综合耦合矩阵
+%是否综合不出耦合矩阵的多项式不可用原型柯西法综合？
+%！！！invalid
 n=4;
 RL=20;
 Start=3400;
@@ -40,9 +42,9 @@ for k=1:Ns
 end
 MatrixM=[Vn,zeros(Ns,nfz+1),-MS11*Vn;zeros(Ns,n+1),Vnfz,-MS21*Vn];
 [U,S,V]=svd(MatrixM);% 对矩阵M进行奇异值分解，U的维度Ns*Ns，V的维度为nfz+n+2*nfz+n+2
-ExtrF=V(1:1:1+n,n+n+nfz+3);
-ExtrP=V(n+2:1:n+nfz+2,n+n+nfz+3);
-ExtrE=V(n+nfz+3:1:n+n+nfz+3,n+n+nfz+3);
+ExtrF=V(n+1:-1:1,n+n+nfz+3);
+ExtrP=V(n+nfz+2:-1:n+2,n+n+nfz+3);
+ExtrE=V(n+n+nfz+3:-1:n+nfz+3,n+n+nfz+3);
 ExtrF=ExtrF./(ExtrF(1));
 ExtrP=ExtrP./(ExtrP(1));
 ExtrE=ExtrE./(ExtrE(1));
@@ -56,13 +58,13 @@ ExtrE=TE;
 % ExtrP1=ExtrP.*1i.^[0:1:nfz];
 % ExtrE1=ExtrE.*1i.^[0:1:n];
 
-% ExtrF1=conj(ExtrF);
-% ExtrP1=conj(ExtrP);
-% ExtrE1=conj(ExtrE);
+ExtrF1=conj(ExtrF);
+ExtrP1=conj(ExtrP);
+ExtrE1=conj(ExtrE);
 
-ExtrF1=ExtrF;
-ExtrP1=ExtrP;
-ExtrE1=ExtrE;
+% ExtrF1=ExtrF;
+% ExtrP1=ExtrP;
+% ExtrE1=ExtrE;
 M1=zeros(1,n);
 N1=zeros(1,n);
 if mod(n,2)==0
